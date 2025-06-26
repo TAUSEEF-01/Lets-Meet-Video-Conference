@@ -282,63 +282,87 @@ class ChatWidget(QWidget):
         self.init_ui()
 
     def init_ui(self):
-        # Enhanced styling for chat widget
+        # Enhanced styling for chat widget with modern aesthetic
         self.setStyleSheet("""
             ChatWidget {
-                background-color: #f8fafc;
-                border-radius: 12px;
-                padding: 10px;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #ffffff, stop:1 #f8fafc);
+                border-radius: 16px;
+                padding: 8px;
             }
         """)
         
         self.layout = QVBoxLayout()
-        self.layout.setSpacing(12)
-        self.layout.setContentsMargins(15, 15, 15, 15)
+        self.layout.setSpacing(16)
+        self.layout.setContentsMargins(20, 20, 20, 20)
         self.setLayout(self.layout)
 
-        # Chat title
+        # Chat title with gradient background
         self.title_label = QLabel("💬 Chat")
         self.title_label.setStyleSheet("""
             QLabel {
-                font-size: 18px;
-                font-weight: bold;
+                font-size: 22px;
+                font-weight: 700;
                 color: #6366f1;
-                padding: 8px;
-                border-bottom: 2px solid #e0e7ff;
-                margin-bottom: 10px;
+                padding: 14px 20px;
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #e0e7ff, stop:1 #c7d2fe);
+                border-radius: 12px;
+                margin-bottom: 8px;
+                border: 2px solid #a5b4fc;
             }
         """)
         self.layout.addWidget(self.title_label)
 
+        # Messages area with modern styling - made height adjustable
         self.central_widget = QTextEdit(self)
         self.central_widget.setReadOnly(True)
         self.central_widget.setStyleSheet("""
             QTextEdit {
-                background-color: white;
+                min-height: 150px;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #f8fafc, stop:1 #f1f5f9);
                 border: 2px solid #e0e7ff;
-                border-radius: 10px;
-                padding: 10px;
-                font-size: 14px;
-                line-height: 1.4;
+                border-radius: 14px;
+                padding: 16px;
+                font-size: 15px;
+                color: #1e293b;
+                font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+                selection-background-color: #c7d2fe;
+            }
+            QTextEdit:focus {
+                border: 2px solid #6366f1;
+                background: #ffffff;
             }
         """)
+        # Fix the size policy syntax
+        from PyQt6.QtWidgets import QSizePolicy
+        self.central_widget.setSizePolicy(
+            QSizePolicy.Policy.Preferred,
+            QSizePolicy.Policy.Expanding
+        )
         self.layout.addWidget(self.central_widget)
 
+        # Recipients selection with modern design
         self.clients_menu = QMenu("Clients", self)
         self.clients_menu.aboutToShow.connect(self.resize_clients_menu)
         self.clients_menu.setStyleSheet("""
             QMenu {
-                background-color: white;
-                border: 2px solid #e0e7ff;
-                border-radius: 8px;
-                padding: 5px;
+                background: rgba(255, 255, 255, 0.95);
+                border: 2px solid #c7d2fe;
+                border-radius: 12px;
+                padding: 8px;
+                backdrop-filter: blur(10px);
             }
             QMenu::item {
-                padding: 8px 12px;
-                border-radius: 4px;
+                padding: 10px 16px;
+                border-radius: 8px;
+                margin: 2px;
             }
             QMenu::item:selected {
-                background-color: #e0e7ff;
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #e0e7ff, stop:1 #c7d2fe);
+                color: #374151;
             }
         """)
         self.clients_checkboxes = {}
@@ -351,62 +375,78 @@ class ChatWidget(QWidget):
         self.clients_button.setMenu(self.clients_menu)
         self.clients_button.setStyleSheet("""
             QPushButton {
-                background-color: #e0e7ff;
-                border: 2px solid #c7d2fe;
-                border-radius: 8px;
-                padding: 10px 15px;
-                font-size: 14px;
-                font-weight: 500;
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #e0e7ff, stop:1 #c7d2fe);
+                border: 2px solid #a5b4fc;
+                border-radius: 12px;
+                padding: 12px 20px;
+                font-size: 15px;
+                font-weight: 600;
                 color: #374151;
             }
             QPushButton:hover {
-                background-color: #c7d2fe;
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #c7d2fe, stop:1 #a5b4fc);
                 border-color: #6366f1;
+                transform: translateY(-1px);
             }
             QPushButton:pressed {
-                background-color: #a5b4fc;
+                background: #a5b4fc;
+                transform: translateY(0px);
             }
         """)
         self.layout.addWidget(self.clients_button)
 
+        # File button with attractive styling
         self.file_button = QPushButton("📎 Send File", self)
         self.file_button.setStyleSheet("""
             QPushButton {
-                background-color: #fef3c7;
-                border: 2px solid #fbbf24;
-                border-radius: 8px;
-                padding: 10px 15px;
-                font-size: 14px;
-                font-weight: 500;
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #fef3c7, stop:1 #fde68a);
+                border: 2px solid #f59e0b;
+                border-radius: 12px;
+                padding: 12px 20px;
+                font-size: 15px;
+                font-weight: 600;
                 color: #92400e;
             }
             QPushButton:hover {
-                background-color: #fde68a;
-                border-color: #f59e0b;
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #fde68a, stop:1 #fbbf24);
+                border-color: #d97706;
+                transform: translateY(-1px);
             }
             QPushButton:pressed {
-                background-color: #fbbf24;
+                background: #fbbf24;
+                transform: translateY(0px);
             }
         """)
         self.layout.addWidget(self.file_button)
 
+        # Message input area with modern design
         self.send_layout = QHBoxLayout()
-        self.send_layout.setSpacing(8)
+        self.send_layout.setSpacing(12)
         self.layout.addLayout(self.send_layout)
 
         self.line_edit = QLineEdit(self)
-        self.line_edit.setPlaceholderText("Type your message here...")
+        self.line_edit.setPlaceholderText("💭 Type your message here...")
         self.line_edit.setStyleSheet("""
             QLineEdit {
                 border: 2px solid #e0e7ff;
-                border-radius: 10px;
-                padding: 12px 15px;
-                font-size: 14px;
-                background-color: white;
+                border-radius: 12px;
+                padding: 14px 18px;
+                font-size: 15px;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #ffffff, stop:1 #f8fafc);
+                color: #1e293b;
             }
             QLineEdit:focus {
                 border: 2px solid #6366f1;
+                background: #ffffff;
                 outline: none;
+            }
+            QLineEdit:hover {
+                border: 2px solid #c7d2fe;
             }
         """)
         self.send_layout.addWidget(self.line_edit)
@@ -414,46 +454,58 @@ class ChatWidget(QWidget):
         self.send_button = QPushButton("📤 Send", self)
         self.send_button.setStyleSheet("""
             QPushButton {
-                background-color: #6366f1;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #6366f1, stop:1 #3b82f6);
                 border: none;
-                border-radius: 10px;
-                padding: 12px 20px;
-                font-size: 14px;
-                font-weight: 600;
+                border-radius: 12px;
+                padding: 14px 24px;
+                font-size: 15px;
+                font-weight: 700;
                 color: white;
+                min-width: 80px;
             }
             QPushButton:hover {
-                background-color: #5b21b6;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #3b82f6, stop:1 #2563eb);
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0, 130, 246, 0.4);
             }
             QPushButton:pressed {
-                background-color: #4c1d95;
+                background: #2563eb;
+                transform: translateY(0px);
             }
         """)
         self.send_layout.addWidget(self.send_button)
 
-        # Add some spacing
+        # Spacing before end button
         self.layout.addSpacing(20)
 
+        # End call button with danger styling
         self.end_button = QPushButton("📞 End Call", self)
         self.end_button.setStyleSheet("""
             QPushButton {
-                background-color: #ef4444;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #ef4444, stop:1 #dc2626);
                 border: none;
-                border-radius: 10px;
-                padding: 12px 20px;
-                font-size: 14px;
-                font-weight: 600;
+                border-radius: 12px;
+                padding: 14px 24px;
+                font-size: 15px;
+                font-weight: 700;
                 color: white;
             }
             QPushButton:hover {
-                background-color: #dc2626;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #dc2626, stop:1 #b91c1c);
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
             }
             QPushButton:pressed {
-                background-color: #b91c1c;
+                background: #b91c1c;
+                transform: translateY(0px);
             }
         """)
         self.layout.addWidget(self.end_button)
-    
+
     def add_client(self, name: str):
         checkbox = QCheckBox(name, self)
         checkbox.setChecked(True)
@@ -511,7 +563,34 @@ class ChatWidget(QWidget):
         return text
     
     def add_msg(self, from_name: str, to_name: str, msg: str):
-        self.central_widget.append(f"[{from_name} 🠖 {to_name}] {msg}")
+        # Enhanced HTML styling for chat messages with modern bubbles
+        timestamp = __import__('datetime').datetime.now().strftime("%H:%M")
+        
+        # Different styling for sent vs received messages
+        if from_name == "You":
+            bubble_style = "background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #6366f1, stop:1 #3b82f6); color: white; margin-left: 40px; text-align: right;"
+            sender_style = "color: #6366f1; text-align: right; margin-left: 40px;"
+        else:
+            bubble_style = "background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #e0e7ff, stop:1 #c7d2fe); color: #1e293b; margin-right: 40px;"
+            sender_style = "color: #4338ca; margin-right: 40px;"
+        
+        html = f"""
+        <div style="margin-bottom: 16px; font-family: 'Inter', Arial, sans-serif;">
+            <div style="{sender_style} font-weight: 600; font-size: 13px; margin-bottom: 4px;">
+                {from_name} <span style="color: #64748b; font-weight: 400;">to {to_name}</span>
+                <span style="color: #94a3b8; font-size: 11px; margin-left: 8px;">{timestamp}</span>
+            </div>
+            <div style="{bubble_style} padding: 12px 16px; border-radius: 16px; 
+                        display: inline-block; max-width: 85%; word-wrap: break-word;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.1); font-size: 15px; line-height: 1.4;">
+                {msg}
+            </div>
+        </div>
+        """
+        self.central_widget.append(html)
+        # Auto-scroll to bottom
+        scrollbar = self.central_widget.verticalScrollBar()
+        scrollbar.setValue(scrollbar.maximum())
 
 
 class LoginDialog(QDialog):
@@ -628,13 +707,19 @@ class MainWindow(QMainWindow):
         self.init_ui()
 
     def init_ui(self):
-        # Set a nice, not-too-big default window size and center it
+        # Set a smaller window size and position it at the top of the screen
         self.setWindowTitle("🎥 Video Conference - Premium Experience")
-        self.resize(1100, 700)
-        qr = self.frameGeometry()
-        cp = self.screen().availableGeometry().center()
-        qr.moveCenter(cp)
-        self.move(qr.topLeft())
+        self.resize(1000, 700)  # Reduced overall size from 1100x700 to 900x500
+        
+        # Position window at the top-center of the screen
+        screen_geometry = self.screen().availableGeometry()
+        x = (screen_geometry.width() - 900) // 2  # Center horizontally
+        y = 50  # Position near the top with some margin
+        self.move(x, y)
+        
+        # Make the window resizable (remove any fixed size constraints)
+        self.setMinimumSize(600, 400)  # Set minimum size but allow resizing
+        self.setMaximumSize(16777215, 16777215)  # Remove maximum size restrictions
 
         # Enhanced main window styling
         self.setStyleSheet("""
@@ -675,7 +760,7 @@ class MainWindow(QMainWindow):
         self.video_list_widget = VideoListWidget()
         self.setCentralWidget(self.video_list_widget)
 
-        self.sidebar = QDockWidget("💬 Chat & Controls", self)
+        self.sidebar = QDockWidget(self)
         self.sidebar.setFeatures(QDockWidget.DockWidgetFeature.NoDockWidgetFeatures)
         self.sidebar.setStyleSheet("""
             QDockWidget {
