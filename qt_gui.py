@@ -622,15 +622,20 @@ class MainWindow(QMainWindow):
         self.login_dialog = LoginDialog(self)
         if not self.login_dialog.exec():
             exit()
-        
+
         self.server_conn.name = self.login_dialog.get_name()
         self.server_conn.start()
         self.init_ui()
 
     def init_ui(self):
+        # Set a nice, not-too-big default window size and center it
         self.setWindowTitle("🎥 Video Conference - Premium Experience")
-        self.setGeometry(100, 100, 1400, 900)
-        
+        self.resize(1100, 700)
+        qr = self.frameGeometry()
+        cp = self.screen().availableGeometry().center()
+        qr.moveCenter(cp)
+        self.move(qr.topLeft())
+
         # Enhanced main window styling
         self.setStyleSheet("""
             QMainWindow {
@@ -700,10 +705,10 @@ class MainWindow(QMainWindow):
         self.camera_menu = self.menuBar().addMenu("📹 Camera")
         self.microphone_menu = self.menuBar().addMenu("🎤 Microphone")
         self.layout_menu = self.menuBar().addMenu("📐 Layout")
-        
+
         self.camera_menu.addAction("📹 Disable Camera", self.toggle_camera)
         self.microphone_menu.addAction("🎤 Disable Microphone", self.toggle_microphone)
-        
+
         self.layout_actions = {}
         layout_action_group = QActionGroup(self)
         for res in frame_size.keys():
