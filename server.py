@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 
 from constants import *
 
-IP = '10.33.24.139'
+IP = '192.168.50.242' #'10.33.24.139'
 
 clients = {} # list of clients connected to the server
 video_conn = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
