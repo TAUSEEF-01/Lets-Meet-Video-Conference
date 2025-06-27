@@ -36,7 +36,7 @@
 #         else:
 #             self.camera = None
 #             self.microphone = None
-        
+
 #         self.camera_enabled = True
 #         self.microphone_enabled = True
 
@@ -51,7 +51,7 @@
 #             self.video_frame = None
 
 #         return self.video_frame
-    
+
 #     def get_audio(self):
 #         if not self.microphone_enabled:
 #             self.audio_data = None
@@ -101,12 +101,12 @@
 #             self.main_socket.close()
 #             window.close()
 #             return
-        
+
 #         self.send_msg(self.video_socket, Message(self.name, ADD, VIDEO))
 #         self.send_msg(self.audio_socket, Message(self.name, ADD, AUDIO))
 
 #         self.connected = True
-    
+
 #     def start_conn_threads(self):
 #         self.main_conn_thread = Worker(self.handle_conn, self.main_socket, TEXT)
 #         self.threadpool.start(self.main_conn_thread)
@@ -123,15 +123,15 @@
 
 #         self.audio_broadcast_thread = Worker(self.media_broadcast_loop, self.audio_socket, AUDIO)
 #         self.threadpool.start(self.audio_broadcast_thread)
-    
+
 #     def disconnect_server(self):
 #         self.send_msg(self.main_socket, Message(self.name, DISCONNECT))
 #         self.main_socket.disconnect()
-        
+
 #         # Release camera resources
 #         if client.camera:
 #             client.camera.release()
-    
+
 #     def send_msg(self, conn: socket.socket, msg: Message):
 #         msg_bytes = pickle.dumps(msg)
 #         # print("Sending..", len(msg_bytes))
@@ -145,7 +145,7 @@
 #         except (BrokenPipeError, ConnectionResetError, OSError):
 #             print(f"[ERROR] Connection not present")
 #             self.connected = False
-    
+
 #     def send_file(self, filepath: str, to_names: tuple[str]):
 #         filename = os.path.basename(filepath)
 #         with open(filepath, 'rb') as f:
@@ -157,7 +157,7 @@
 #             msg = Message(self.name, POST, FILE, None, to_names)
 #             self.send_msg(self.main_socket, msg)
 #         self.add_msg_signal.emit(self.name, f"File {filename} sent.")
-    
+
 #     def media_broadcast_loop(self, conn: socket.socket, media: str):
 #         while self.connected:
 #             if media == VIDEO:
@@ -252,17 +252,16 @@
 
 #     status_code = app.exec()
 #     server_conn.disconnect_server()
-    
+
 #     # Ensure camera is released before exit
 #     if client.camera:
 #         client.camera.release()
-    
+
 #     # Cleanup camera manager
 #     from qt_gui import camera_manager
 #     camera_manager.running = False
-    
-#     os._exit(status_code)
 
+#     os._exit(status_code)
 
 
 import os
@@ -285,7 +284,7 @@ AUDIO_ADDR = (IP, AUDIO_PORT)
 
 
 class Client:
-    def __init__(self, name: str, current_device = False):
+    def __init__(self, name: str, current_device=False):
         self.name = name
         self.current_device = current_device
 
@@ -298,7 +297,7 @@ class Client:
         else:
             self.camera = None
             self.microphone = None
-        
+
         self.camera_enabled = True
         self.microphone_enabled = True
 
@@ -311,7 +310,7 @@ class Client:
             self.video_frame = self.camera.get_frame()
 
         return self.video_frame
-    
+
     def get_audio(self):
         if not self.microphone_enabled:
             self.audio_data = None
@@ -340,9 +339,9 @@ class ServerConnection(QThread):
         self.recieving_filename = None
 
     def run(self):
-        self.init_conn() # Connect to all servers and send name
-        self.start_conn_threads() # Start receiving threads for all servers
-        self.start_broadcast_threads() # Start sending threads for audio and video
+        self.init_conn()  # Connect to all servers and send name
+        self.start_conn_threads()  # Start receiving threads for all servers
+        self.start_broadcast_threads()  # Start sending threads for audio and video
 
         self.add_client_signal.emit(client)
 
@@ -361,12 +360,12 @@ class ServerConnection(QThread):
             self.main_socket.close()
             window.close()
             return
-        
+
         self.send_msg(self.video_socket, Message(self.name, ADD, VIDEO))
         self.send_msg(self.audio_socket, Message(self.name, ADD, AUDIO))
 
         self.connected = True
-    
+
     def start_conn_threads(self):
         self.main_conn_thread = Worker(self.handle_conn, self.main_socket, TEXT)
         self.threadpool.start(self.main_conn_thread)
@@ -378,16 +377,32 @@ class ServerConnection(QThread):
         self.threadpool.start(self.audio_conn_thread)
 
     def start_broadcast_threads(self):
-        self.video_broadcast_thread = Worker(self.media_broadcast_loop, self.video_socket, VIDEO)
+        self.video_broadcast_thread = Worker(
+            self.media_broadcast_loop, self.video_socket, VIDEO
+        )
         self.threadpool.start(self.video_broadcast_thread)
 
-        self.audio_broadcast_thread = Worker(self.media_broadcast_loop, self.audio_socket, AUDIO)
+        self.audio_broadcast_thread = Worker(
+            self.media_broadcast_loop, self.audio_socket, AUDIO
+        )
         self.threadpool.start(self.audio_broadcast_thread)
-    
+
     def disconnect_server(self):
-        self.send_msg(self.main_socket, Message(self.name, DISCONNECT))
-        self.main_socket.disconnect()
-    
+        if self.connected:
+            try:
+                self.send_msg(self.main_socket, Message(self.name, DISCONNECT))
+                self.main_socket.disconnect()
+            except:
+                pass  # Ignore errors during disconnect
+
+        # Clean up resources
+        try:
+            self.main_socket.close()
+            self.video_socket.close()
+            self.audio_socket.close()
+        except:
+            pass
+
     def send_msg(self, conn: socket.socket, msg: Message):
         msg_bytes = pickle.dumps(msg)
         # print("Sending..", len(msg_bytes))
@@ -401,10 +416,10 @@ class ServerConnection(QThread):
         except (BrokenPipeError, ConnectionResetError, OSError):
             print(f"[ERROR] Connection not present")
             self.connected = False
-    
+
     def send_file(self, filepath: str, to_names: tuple[str]):
         filename = os.path.basename(filepath)
-        with open(filepath, 'rb') as f:
+        with open(filepath, "rb") as f:
             data = f.read(SIZE)
             while data:
                 msg = Message(self.name, POST, FILE, data, to_names)
@@ -413,7 +428,7 @@ class ServerConnection(QThread):
             msg = Message(self.name, POST, FILE, None, to_names)
             self.send_msg(self.main_socket, msg)
         self.add_msg_signal.emit(self.name, f"File {filename} sent.")
-    
+
     def media_broadcast_loop(self, conn: socket.socket, media: str):
         while self.connected:
             if media == VIDEO:
@@ -465,26 +480,30 @@ class ServerConnection(QThread):
                 self.add_msg_signal.emit(client_name, msg.data)
             elif msg.data_type == FILE:
                 if type(msg.data) == str:
-                    if os.path.exists(msg.data): # create copy
+                    if os.path.exists(msg.data):  # create copy
                         filename, ext = os.path.splitext(msg.data)
                         i = 1
                         while os.path.exists(f"{filename}({i}){ext}"):
                             i += 1
                         msg.data = f"{filename}({i}){ext}"
                     self.recieving_filename = msg.data
-                    with open(self.recieving_filename, 'wb') as f:
+                    with open(self.recieving_filename, "wb") as f:
                         pass
                 elif msg.data is None:
-                    self.add_msg_signal.emit(client_name, f"File {self.recieving_filename} recieved.")
+                    self.add_msg_signal.emit(
+                        client_name, f"File {self.recieving_filename} recieved."
+                    )
                     self.recieving_filename = None
                 else:
-                    with open(self.recieving_filename, 'ab') as f:
+                    with open(self.recieving_filename, "ab") as f:
                         f.write(msg.data)
             else:
                 print(f"[{self.name}] [ERROR] Invalid data type {msg.data_type}")
         elif msg.request == ADD:
             if client_name in all_clients:
-                print(f"[{self.name}] [ERROR] Client already exists with name {client_name}")
+                print(
+                    f"[{self.name}] [ERROR] Client already exists with name {client_name}"
+                )
                 return
             all_clients[client_name] = Client(client_name)
             self.add_client_signal.emit(all_clients[client_name])
@@ -494,6 +513,7 @@ class ServerConnection(QThread):
                 return
             self.remove_client_signal.emit(client_name)
             all_clients.pop(client_name)
+
 
 client = Client("You", current_device=True)
 
@@ -508,4 +528,12 @@ if __name__ == "__main__":
 
     status_code = app.exec()
     server_conn.disconnect_server()
+
+    # Clean up camera resources
+    if hasattr(client, "camera") and client.camera:
+        try:
+            client.camera.cap.release()
+        except:
+            pass
+
     os._exit(status_code)
