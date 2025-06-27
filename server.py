@@ -11,8 +11,8 @@ from constants import *
 IP = '192.168.50.242' #'10.33.24.139'
 
 clients = {} # list of clients connected to the server
-video_conn = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-audio_conn = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+video_conn = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP socket
+audio_conn = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP socket
 media_conns = {VIDEO: video_conn, AUDIO: audio_conn}
 
 @dataclass
@@ -124,7 +124,7 @@ def handle_main_conn(name: str):
 
 
 def main_server():
-    main_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    main_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # TCP socket
     main_socket.bind((IP, MAIN_PORT))
     main_socket.listen()
     print(f"[LISTENING] Main Server is listening on {IP}:{MAIN_PORT}")
