@@ -1,0 +1,34 @@
+# Core GUI Framework
+PyQt6>=6.4.0
+
+# Computer Vision and Image Processing
+opencv-python>=4.6.0
+numpy>=1.21.0
+
+# Audio Processing
+PyAudio>=0.2.11
+
+# Data Handling
+dataclasses>=0.6;python_version<"3.7"
+
+# System and OS utilities (usually included with Python)
+# socket - built-in
+# threading - built-in
+# pickle - built-in
+# struct - built-in
+# os - built-in
+# sys - built-in
+# time - built-in
+# traceback - built-in
+# collections - built-in
+
+# Development and Testing (optional)
+pytest>=7.0.0
+pytest-qt>=4.0.0
+
+# Code Quality (optional)
+black>=22.0.0
+flake8>=4.0.0
+
+# Documentation (optional)
+sphinx>=4.0.0
