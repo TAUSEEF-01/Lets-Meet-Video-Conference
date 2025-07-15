@@ -98,3 +98,52 @@ class DataRateTracker:
             f"Total Sent: {self.format_bytes(rate_data['total_bytes_sent'])}, "
             f"Total Received: {self.format_bytes(rate_data['total_bytes_received'])}"
         )
+
+
+def live_plot_data_rate(tracker, interval=1000, time_window=5.0):
+    """
+    Live plot Sent/Received rates using matplotlib.
+    tracker: DataRateTracker instance
+    interval: update interval in ms
+    time_window: seconds for rate calculation
+    """
+    import matplotlib.pyplot as plt
+    from matplotlib.animation import FuncAnimation
+
+    sent_rates = []
+    received_rates = []
+    timestamps = []
+
+    fig, ax = plt.subplots()
+    (line_sent,) = ax.plot([], [], label="Sent (B/s)")
+    (line_received,) = ax.plot([], [], label="Received (B/s)")
+    ax.legend()
+    ax.set_xlabel("Time (s)")
+    ax.set_ylabel("Rate (Bytes/s)")
+    ax.set_title("Live Data Rate")
+
+    def update(frame):
+        rate_data = tracker.get_rate_data(time_window)
+        t = time.time()
+        sent_rates.append(rate_data["total_sent"])
+        received_rates.append(rate_data["total_received"])
+        timestamps.append(t)
+
+        # Keep only last 100 points
+        if len(timestamps) > 100:
+            sent_rates.pop(0)
+            received_rates.pop(0)
+            timestamps.pop(0)
+
+        # Normalize timestamps to start at zero
+        t0 = timestamps[0] if timestamps else 0
+        times = [ts - t0 for ts in timestamps]
+
+        line_sent.set_data(times, sent_rates)
+        line_received.set_data(times, received_rates)
+        ax.relim()
+        ax.autoscale_view()
+        return line_sent, line_received
+
+    ani = FuncAnimation(fig, update, interval=interval)
+    plt.show()

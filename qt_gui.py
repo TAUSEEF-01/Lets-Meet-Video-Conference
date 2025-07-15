@@ -27,8 +27,6 @@ from PyQt6.QtWidgets import (
 )
 
 from constants import *
-from data_rate_core import DataRateTracker
-from data_rate_monitor import DataRateMonitorWindow
 
 # Camera
 CAMERA_RES = "240p"
@@ -819,13 +817,6 @@ class MainWindow(QMainWindow):
         self.server_conn = server_conn
         self.audio_threads = {}
 
-        # Initialize data rate tracker
-        self.data_rate_tracker = DataRateTracker()
-        self.data_rate_window = None
-
-        # Pass tracker to server connection
-        self.server_conn.data_rate_tracker = self.data_rate_tracker
-
         self.server_conn.add_client_signal.connect(self.add_client)
         self.server_conn.remove_client_signal.connect(self.remove_client)
         self.server_conn.add_msg_signal.connect(self.add_msg)
@@ -920,17 +911,9 @@ class MainWindow(QMainWindow):
         self.camera_menu = self.menuBar().addMenu("📹 Camera")
         self.microphone_menu = self.menuBar().addMenu("🎤 Microphone")
         self.layout_menu = self.menuBar().addMenu("📐 Layout")
-        self.monitor_menu = self.menuBar().addMenu("📊 Monitor")
 
         self.camera_menu.addAction("📹 Disable Camera", self.toggle_camera)
         self.microphone_menu.addAction("🎤 Disable Microphone", self.toggle_microphone)
-
-        # Add data rate monitoring menu
-        self.monitor_menu.addAction(
-            "📊 Show Data Rate Monitor", self.show_data_rate_monitor
-        )
-        self.monitor_menu.addSeparator()
-        self.monitor_menu.addAction("📈 Reset Statistics", self.reset_data_rate_stats)
 
         self.layout_actions = {}
         layout_action_group = QActionGroup(self)
@@ -1107,37 +1090,46 @@ class MainWindow(QMainWindow):
         """
         )
 
-    def show_data_rate_monitor(self):
-        """Show the data rate monitoring window"""
-        if self.data_rate_window is None:
-            self.data_rate_window = DataRateMonitorWindow(self.data_rate_tracker, self)
 
-        self.data_rate_window.show()
-        self.data_rate_window.raise_()
-        self.data_rate_window.activateWindow()
+class Worker(QRunnable):
+    def __init__(self, fn, *args, **kwargs):
+        super(Worker, self).__init__()
+        # Store constructor arguments (re-used for processing)
+        self.fn = fn
+        self.args = args
+        self.kwargs = kwargs
 
-    def reset_data_rate_stats(self):
-        """Reset data rate statistics"""
-        reply = QMessageBox.question(
-            self,
-            "Reset Statistics",
-            "Are you sure you want to reset all data rate statistics?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No,
+    @pyqtSlot()
+    def run(self):
+        self.fn(*self.args, **self.kwargs)
+
+
+class Microphone:
+    def __init__(self):
+        self.stream = pa.open(
+            rate=SAMPLE_RATE,
+            channels=1,
+            format=pyaudio.paInt16,
+            input=True,
+            frames_per_buffer=BLOCK_SIZE,
         )
 
-        if reply == QMessageBox.StandardButton.Yes:
-            self.data_rate_tracker = DataRateTracker()
-            self.server_conn.data_rate_tracker = self.data_rate_tracker
-            if self.data_rate_window:
-                self.data_rate_window.close()
-                self.data_rate_window = None
-            QMessageBox.information(
-                self, "Reset Complete", "Data rate statistics have been reset."
-            )
-            QMessageBox.information(
-                self, "Reset Complete", "Data rate statistics have been reset."
-            )
+    def get_data(self):
+        return self.stream.read(BLOCK_SIZE)
+
+
+class AudioThread(QThread):
+    def __init__(self, client, parent=None):
+        super().__init__(parent)
+        self.client = client
+        self.stream = pa.open(
+            rate=SAMPLE_RATE,
+            channels=1,
+            format=pyaudio.paInt16,
+            output=True,
+            frames_per_buffer=BLOCK_SIZE,
+        )
+        self.connected = True
 
     def run(self):
         # if this is the current client, then don't play audio
@@ -2041,6 +2033,7 @@ class MainWindow(QMainWindow):
         reply = QMessageBox.question(
             self,
             "Leave Meeting",
+
             "Are you sure you want to leave the meeting?\nYou can rejoin by restarting the application.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No,

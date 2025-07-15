@@ -7,6 +7,12 @@ import pickle
 from dataclasses import dataclass, field
 import sys
 import os
+import matplotlib
+
+matplotlib.use("TkAgg")
+import tkinter as tk
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.figure import Figure
 
 # Add the current directory to Python path to import data_rate_core
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -23,6 +29,8 @@ media_conns = {VIDEO: video_conn, AUDIO: audio_conn}
 
 # Global data rate tracker for server monitoring
 server_data_tracker = DataRateTracker()
+
+shutdown_event = threading.Event()
 
 
 @dataclass
@@ -159,18 +167,96 @@ def handle_main_conn(name: str):
     disconnect_client(client)
 
 
+class ServerDataRateGraphWindow:
+    def __init__(self, tracker):
+        self.tracker = tracker
+        self.root = tk.Tk()
+        self.root.title("Server Data Transmission Rate")
+        self.fig = Figure(figsize=(10, 6))
+        self.ax = self.fig.add_subplot(111)
+        self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)
+        self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=1)
+        self.root.protocol("WM_DELETE_WINDOW", self.on_close)
+        self._running = True
+
+        # Store historical data for plotting
+        self.sent_rates = []
+        self.recv_rates = []
+        self.timestamps = []
+
+        self.update_plot()
+
+    def update_plot(self):
+        if not self._running or shutdown_event.is_set():
+            self.on_close()
+            return
+
+        # Get current rate data from tracker
+        rate_data = self.tracker.get_rate_data(5.0)  # 5 second window
+        current_time = time.time()
+
+        # Append new data
+        self.sent_rates.append(rate_data["total_sent"])
+        self.recv_rates.append(rate_data["total_received"])
+        self.timestamps.append(current_time)
+
+        # Keep only last 100 points
+        if len(self.timestamps) > 100:
+            self.sent_rates.pop(0)
+            self.recv_rates.pop(0)
+            self.timestamps.pop(0)
+
+        # Clear and redraw plot
+        self.ax.clear()
+        if self.timestamps:
+            # Normalize timestamps to start at zero
+            t0 = self.timestamps[0]
+            times = [t - t0 for t in self.timestamps]
+
+            self.ax.plot(times, self.sent_rates, label="Sent (B/s)", color="blue")
+            self.ax.plot(times, self.recv_rates, label="Received (B/s)", color="red")
+
+        self.ax.set_xlabel("Time (s)")
+        self.ax.set_ylabel("Bytes per second")
+        self.ax.set_title("Server Data Transmission Rate")
+        self.ax.legend()
+        self.ax.grid(True)
+        self.canvas.draw()
+
+        self.root.after(1000, self.update_plot)  # Update every 1 second
+
+    def on_close(self):
+        self._running = False
+        try:
+            self.root.quit()
+            self.root.destroy()
+        except:
+            pass
+
+    def run(self):
+        self.root.mainloop()
+
+
 def print_server_stats():
     """Print server data rate statistics periodically"""
-    import threading
 
     def stats_loop():
-        while True:
-            time.sleep(30)  # Print stats every 30 seconds
-            stats_summary = server_data_tracker.get_stats_summary(30)
-            print(f"[SERVER STATS] {stats_summary}")
+        while not shutdown_event.is_set():
+            time.sleep(1)
+            # Print stats every 30 seconds
+            if int(time.time()) % 30 == 0:
+                stats_summary = server_data_tracker.get_stats_summary(30)
+                print(f"[SERVER STATS] {stats_summary}")
 
     stats_thread = threading.Thread(target=stats_loop, daemon=True)
     stats_thread.start()
+
+    def graph_loop():
+        graph_window = ServerDataRateGraphWindow(server_data_tracker)
+        graph_window.run()
+
+    graph_thread = threading.Thread(target=graph_loop, daemon=True)
+    graph_thread.start()
 
 
 def main_server():
@@ -210,13 +296,15 @@ if __name__ == "__main__":
     try:
         main_server()
     except KeyboardInterrupt:
-        print(traceback.format_exc())
-        print(f"[EXITING] Keyboard Interrupt")
+        print("[EXITING] Keyboard Interrupt")
+        shutdown_event.set()
+        time.sleep(1)
         for client in clients.values():
             disconnect_client(client)
     except Exception as e:
         print(f"[ERROR] {e}")
         print(traceback.format_exc())
-    finally:
-        os._exit(0)
-    
+        shutdown_event.set()
+        time.sleep(1)
+        for client in clients.values():
+            disconnect_client(client)
