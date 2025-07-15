@@ -4,7 +4,7 @@ import pickle
 from dataclasses import astuple, dataclass
 
 PORT = 53535
-MAIN_PORT = 53530
+MAIN_PORT = 8080
 VIDEO_PORT = 53531
 AUDIO_PORT = 53532
 # ADDR = ('', PORT)

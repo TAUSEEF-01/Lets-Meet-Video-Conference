@@ -5,15 +5,25 @@ import os
 import traceback
 import pickle
 from dataclasses import dataclass, field
+import sys
+import os
+
+# Add the current directory to Python path to import data_rate_core
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from constants import *
+from data_rate_core import DataRateTracker
 
-IP = '192.168.50.242' #'10.33.24.139'
+IP = "192.168.50.242"
 
-clients = {} # list of clients connected to the server
-video_conn = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP socket
-audio_conn = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP socket
+clients = {}  # list of clients connected to the server
+video_conn = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # UDP socket
+audio_conn = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # UDP socket
 media_conns = {VIDEO: video_conn, AUDIO: audio_conn}
+
+# Global data rate tracker for server monitoring
+server_data_tracker = DataRateTracker()
+
 
 @dataclass
 class Client:
@@ -22,23 +32,33 @@ class Client:
     connected: bool
     media_addrs: dict = field(default_factory=lambda: {VIDEO: None, AUDIO: None})
 
-    def send_msg(self, from_name: str, request: str, data_type: str = None, data: any = None):
+    def send_msg(
+        self, from_name: str, request: str, data_type: str = None, data: any = None
+    ):
         msg = Message(from_name, request, data_type, data)
+        msg_bytes = pickle.dumps(msg)
+
+        # Track sent data
+        server_data_tracker.add_sent_data(len(msg_bytes), data_type or "CONTROL")
+
         try:
             if data_type in [VIDEO, AUDIO]:
-                # print(f"[{self.name}] {self.media_addrs}")
                 addr = self.media_addrs.get(data_type, None)
                 if addr is None:
                     return
-                media_conns[data_type].sendto(pickle.dumps(msg), addr)
+                media_conns[data_type].sendto(msg_bytes, addr)
             else:
-                self.main_conn.send_bytes(pickle.dumps(msg))
+                self.main_conn.send_bytes(msg_bytes)
         except (BrokenPipeError, ConnectionResetError, OSError):
-            print(f"[{self.name}] [ERROR] BrokenPipeError or ConnectionResetError or OSError")
+            print(
+                f"[{self.name}] [ERROR] BrokenPipeError or ConnectionResetError or OSError"
+            )
             self.connected = False
 
 
-def broadcast_msg(from_name: str, request: str, data_type: str = None, data: any = None):
+def broadcast_msg(
+    from_name: str, request: str, data_type: str = None, data: any = None
+):
     all_clients = tuple(clients.values())
     for client in all_clients:
         if client.name == from_name:
@@ -46,9 +66,17 @@ def broadcast_msg(from_name: str, request: str, data_type: str = None, data: any
         client.send_msg(from_name, request, data_type, data)
 
 
-def multicast_msg(from_name: str, request: str, to_names: tuple[str], data_type: str = None, data: any = None):
+def multicast_msg(
+    from_name: str,
+    request: str,
+    to_names: tuple[str],
+    data_type: str = None,
+    data: any = None,
+):
     if not to_names:
-        broadcast_msg(from_name, request, data_type, data)
+        broadcast_msg(
+            from_name, request, data_type, data
+        )  # if no specific names, broadcast to all
         return
     for name in to_names:
         if name not in clients:
@@ -63,6 +91,10 @@ def media_server(media: str, port: int):
 
     while True:
         msg_bytes, addr = conn.recvfrom(MEDIA_SIZE[media])
+
+        # Track received data
+        server_data_tracker.add_received_data(len(msg_bytes), media)
+
         try:
             msg: Message = pickle.loads(msg_bytes)
         except pickle.UnpicklingError:
@@ -102,13 +134,17 @@ def handle_main_conn(name: str):
         if client_name == name:
             continue
         client.send_msg(client_name, ADD)
-    
+
     broadcast_msg(name, ADD)
 
     while client.connected:
         msg_bytes = conn.recv_bytes()
         if not msg_bytes:
             break
+
+        # Track received data
+        server_data_tracker.add_received_data(len(msg_bytes), "CONTROL")
+
         try:
             msg = pickle.loads(msg_bytes)
         except pickle.UnpicklingError:
@@ -119,8 +155,22 @@ def handle_main_conn(name: str):
         if msg.request == DISCONNECT:
             break
         multicast_msg(name, msg.request, msg.to_names, msg.data_type, msg.data)
-    
+
     disconnect_client(client)
+
+
+def print_server_stats():
+    """Print server data rate statistics periodically"""
+    import threading
+
+    def stats_loop():
+        while True:
+            time.sleep(30)  # Print stats every 30 seconds
+            stats_summary = server_data_tracker.get_stats_summary(30)
+            print(f"[SERVER STATS] {stats_summary}")
+
+    stats_thread = threading.Thread(target=stats_loop, daemon=True)
+    stats_thread.start()
 
 
 def main_server():
@@ -128,10 +178,18 @@ def main_server():
     main_socket.bind((IP, MAIN_PORT))
     main_socket.listen()
     print(f"[LISTENING] Main Server is listening on {IP}:{MAIN_PORT}")
+    print(f"[INFO] Server data rate monitoring enabled")
 
-    video_server_thread = threading.Thread(target=media_server, args=(VIDEO, VIDEO_PORT))
+    # Start server stats monitoring
+    print_server_stats()
+
+    video_server_thread = threading.Thread(
+        target=media_server, args=(VIDEO, VIDEO_PORT)
+    )
     video_server_thread.start()
-    audio_server_thread = threading.Thread(target=media_server, args=(AUDIO, AUDIO_PORT))
+    audio_server_thread = threading.Thread(
+        target=media_server, args=(AUDIO, AUDIO_PORT)
+    )
     audio_server_thread.start()
 
     while True:
@@ -161,3 +219,4 @@ if __name__ == "__main__":
         print(traceback.format_exc())
     finally:
         os._exit(0)
+    
