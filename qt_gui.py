@@ -437,7 +437,6 @@ class ChatWidget(QWidget):
         self.select_all_checkbox, _ = self.add_client("")
         self.clients_menu.addSeparator()
 
-        # Modern styled buttons with dynamic sizing
         self.clients_button = QPushButton("👥 Select Recipients", self)
         self.clients_button.setMenu(self.clients_menu)
         self.clients_button.setStyleSheet(
@@ -549,12 +548,10 @@ class ChatWidget(QWidget):
 
         self.layout.addSpacing(20)
 
-        # Button container for Leave and End call buttons
         self.button_container = QHBoxLayout()
         self.button_container.setSpacing(12)
         self.layout.addLayout(self.button_container)
 
-        # Leave meeting button
         self.leave_button = QPushButton("🚪 Leave Meeting", self)
         self.leave_button.setStyleSheet(
             """
@@ -581,7 +578,6 @@ class ChatWidget(QWidget):
         )
         self.button_container.addWidget(self.leave_button)
 
-        # End call button with modern danger styling
         self.end_button = QPushButton("📞 End Call", self)
         self.end_button.setStyleSheet(
             """
@@ -615,7 +611,7 @@ class ChatWidget(QWidget):
         action_widget.setDefaultWidget(checkbox)
         self.clients_menu.addAction(action_widget)
 
-        if name == "":  # Select All Checkbox
+        if name == "": 
             checkbox.setText("Select All")
             checkbox.stateChanged.connect(
                 lambda state: self.on_checkbox_click(state, is_select_all=True)
@@ -666,7 +662,6 @@ class ChatWidget(QWidget):
         return text
 
     def add_msg(self, from_name: str, to_name: str, msg: str):
-        # Clean chat bubbles without unsupported properties
         timestamp = __import__("datetime").datetime.now().strftime("%H:%M")
 
         if from_name == "You":
@@ -715,7 +710,6 @@ class LoginDialog(QDialog):
         self.setWindowTitle("🎥 Video Conference - Join Now")
         self.setFixedSize(420, 240)
 
-        # Clean modern styling
         self.setStyleSheet(
             """
             QDialog {
@@ -1010,16 +1004,13 @@ class MainWindow(QMainWindow):
         )
 
         if reply == QMessageBox.StandardButton.Yes:
-            # Disconnect from server but keep the window open
             self.server_conn.connected = False
             self.server_conn.disconnect_server()
 
-            # Show a message that user has left
             self.chat_widget.add_msg(
                 "System", "You", "You have left the meeting. Please restart to rejoin."
             )
 
-            # Disable controls
             self.chat_widget.send_button.setEnabled(False)
             self.chat_widget.line_edit.setEnabled(False)
             self.chat_widget.file_button.setEnabled(False)
@@ -1132,7 +1123,6 @@ class AudioThread(QThread):
         self.connected = True
 
     def run(self):
-        # if this is the current client, then don't play audio
         if self.client.microphone is not None:
             return
         while self.connected:
@@ -1298,7 +1288,6 @@ class VideoListWidget(QListWidget):
         self.setResizeMode(QListWidget.ResizeMode.Adjust)
         self.setMovement(QListWidget.Movement.Static)
 
-        # Clean gradient background
         self.setStyleSheet(
             """
             QListWidget {
@@ -1610,7 +1599,6 @@ class ChatWidget(QWidget):
         )
         self.button_container.addWidget(self.leave_button)
 
-        # End call button with modern danger styling
         self.end_button = QPushButton("📞 End Call", self)
         self.end_button.setStyleSheet(
             """
@@ -1644,7 +1632,7 @@ class ChatWidget(QWidget):
         action_widget.setDefaultWidget(checkbox)
         self.clients_menu.addAction(action_widget)
 
-        if name == "":  # Select All Checkbox
+        if name == "": 
             checkbox.setText("Select All")
             checkbox.stateChanged.connect(
                 lambda state: self.on_checkbox_click(state, is_select_all=True)
@@ -1695,7 +1683,6 @@ class ChatWidget(QWidget):
         return text
 
     def add_msg(self, from_name: str, to_name: str, msg: str):
-        # Clean chat bubbles without unsupported properties
         timestamp = __import__("datetime").datetime.now().strftime("%H:%M")
 
         if from_name == "You":
@@ -1919,7 +1906,6 @@ class MainWindow(QMainWindow):
         self.video_list_widget = VideoListWidget()
         self.setCentralWidget(self.video_list_widget)
 
-        # Enhanced sidebar styling with dynamic sizing
         self.sidebar = QDockWidget("💬 Chat", self)
         self.sidebar.setFeatures(QDockWidget.DockWidgetFeature.NoDockWidgetFeatures)
         self.sidebar.setMinimumWidth(300)
@@ -1929,14 +1915,12 @@ class MainWindow(QMainWindow):
         self.sidebar.setWidget(self.chat_widget)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.sidebar)
 
-        # Connect buttons
         self.chat_widget.send_button.clicked.connect(lambda: self.send_msg(TEXT))
         self.chat_widget.line_edit.returnPressed.connect(lambda: self.send_msg(TEXT))
         self.chat_widget.file_button.clicked.connect(lambda: self.send_msg(FILE))
         self.chat_widget.leave_button.clicked.connect(self.leave_meeting)
         self.chat_widget.end_button.clicked.connect(self.close)
 
-        # menus for camera and microphone toggle
         self.camera_menu = self.menuBar().addMenu("📹 Camera")
         self.microphone_menu = self.menuBar().addMenu("🎤 Microphone")
         self.layout_menu = self.menuBar().addMenu("📐 Layout")
@@ -2040,16 +2024,13 @@ class MainWindow(QMainWindow):
         )
 
         if reply == QMessageBox.StandardButton.Yes:
-            # Disconnect from server but keep the window open
             self.server_conn.connected = False
             self.server_conn.disconnect_server()
 
-            # Show a message that user has left
             self.chat_widget.add_msg(
                 "System", "You", "You have left the meeting. Please restart to rejoin."
             )
 
-            # Disable controls
             self.chat_widget.send_button.setEnabled(False)
             self.chat_widget.line_edit.setEnabled(False)
             self.chat_widget.file_button.setEnabled(False)

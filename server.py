@@ -14,20 +14,18 @@ import tkinter as tk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 
-# Add the current directory to Python path to import data_rate_core
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from constants import *
 from data_rate_core import DataRateTracker
 
-IP = "192.168.50.242"
+IP = "10.42.0.73"
 
-clients = {}  # list of clients connected to the server
-video_conn = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # UDP socket
-audio_conn = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # UDP socket
+clients = {}  
+video_conn = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  
+audio_conn = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) 
 media_conns = {VIDEO: video_conn, AUDIO: audio_conn}
 
-# Global data rate tracker for server monitoring
 server_data_tracker = DataRateTracker()
 
 shutdown_event = threading.Event()
@@ -40,13 +38,12 @@ class Client:
     connected: bool
     media_addrs: dict = field(default_factory=lambda: {VIDEO: None, AUDIO: None})
 
-    def send_msg(
+    def send_msg( # client data sending msg
         self, from_name: str, request: str, data_type: str = None, data: any = None
     ):
         msg = Message(from_name, request, data_type, data)
-        msg_bytes = pickle.dumps(msg)
+        msg_bytes = pickle.dumps(msg) # msg Serialize kortese
 
-        # Track sent data
         server_data_tracker.add_sent_data(len(msg_bytes), data_type or "CONTROL")
 
         try:
@@ -64,7 +61,7 @@ class Client:
             self.connected = False
 
 
-def broadcast_msg(
+def broadcast_msg( # msg broadcast kortese
     from_name: str, request: str, data_type: str = None, data: any = None
 ):
     all_clients = tuple(clients.values())
@@ -84,7 +81,7 @@ def multicast_msg(
     if not to_names:
         broadcast_msg(
             from_name, request, data_type, data
-        )  # if no specific names, broadcast to all
+        )  
         return
     for name in to_names:
         if name not in clients:
@@ -100,7 +97,6 @@ def media_server(media: str, port: int):
     while True:
         msg_bytes, addr = conn.recvfrom(MEDIA_SIZE[media])
 
-        # Track received data
         server_data_tracker.add_received_data(len(msg_bytes), media)
 
         try:
@@ -150,7 +146,6 @@ def handle_main_conn(name: str):
         if not msg_bytes:
             break
 
-        # Track received data
         server_data_tracker.add_received_data(len(msg_bytes), "CONTROL")
 
         try:
@@ -179,7 +174,6 @@ class ServerDataRateGraphWindow:
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
         self._running = True
 
-        # Store historical data for plotting
         self.sent_rates = []
         self.recv_rates = []
         self.timestamps = []
@@ -191,25 +185,20 @@ class ServerDataRateGraphWindow:
             self.on_close()
             return
 
-        # Get current rate data from tracker
-        rate_data = self.tracker.get_rate_data(5.0)  # 5 second window
+        rate_data = self.tracker.get_rate_data(5.0) 
         current_time = time.time()
 
-        # Append new data
         self.sent_rates.append(rate_data["total_sent"])
         self.recv_rates.append(rate_data["total_received"])
         self.timestamps.append(current_time)
 
-        # Keep only last 100 points
         if len(self.timestamps) > 100:
             self.sent_rates.pop(0)
             self.recv_rates.pop(0)
             self.timestamps.pop(0)
 
-        # Clear and redraw plot
         self.ax.clear()
         if self.timestamps:
-            # Normalize timestamps to start at zero
             t0 = self.timestamps[0]
             times = [t - t0 for t in self.timestamps]
 
@@ -243,7 +232,6 @@ def print_server_stats():
     def stats_loop():
         while not shutdown_event.is_set():
             time.sleep(1)
-            # Print stats every 30 seconds
             if int(time.time()) % 30 == 0:
                 stats_summary = server_data_tracker.get_stats_summary(30)
                 print(f"[SERVER STATS] {stats_summary}")
@@ -266,7 +254,6 @@ def main_server():
     print(f"[LISTENING] Main Server is listening on {IP}:{MAIN_PORT}")
     print(f"[INFO] Server data rate monitoring enabled")
 
-    # Start server stats monitoring
     print_server_stats()
 
     video_server_thread = threading.Thread(
