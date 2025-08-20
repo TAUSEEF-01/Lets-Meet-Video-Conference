@@ -7,11 +7,11 @@ A feature-rich, real-time server-client video conferencing application built wit
 ## 📸 Application Screenshots
 
 ### Conference Interface with Multiple Participants
-![Conference Interface](https://github.com/TAUSEEF-01/Lets-Meet-Video-Conference/conference-interface-1.png)
+![Conference Interface](https://github.com/TAUSEEF-01/Lets-Meet-Video-Conference/blob/main/conference-interface-1.png)
 *Video conference interface showing multiple participants with camera controls and chat functionality*
 
 ### Live Video Streaming and File Sharing
-![Live Video and Chat](https://github.com/TAUSEEF-01/Lets-Meet-Video-Conference/conference-interface-2.png)
+![Live Video and Chat](https://github.com/TAUSEEF-01/Lets-Meet-Video-Conference/blob/main/conference-interface-2.png)
 *Real-time video streaming with integrated chat hub and file sharing capabilities*
 
 ---
