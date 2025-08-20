@@ -140,8 +140,8 @@ Lets-Meet-Video-Conference/
 
 ## 👥 Contributors
 
-- **Md. Tauseef-Ur-Rahman**
-- **Tamzid Bin Tariq**
+- **[Md. Tauseef-Ur-Rahman](https://github.com/TAUSEEF-01)**
+- **[Tamzid Bin Tariq](https://github.com/Tamzid-Tariq)**
 
 ---
 
